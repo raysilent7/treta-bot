@@ -4,9 +4,7 @@ server:
 logging:
   level:
     root: WARN
-    org.springframework.boot.web.embedded.undertow.UndertowWebServer: INFO
-    br.com: INFO
+    com: INFO
 
 bot:
-  prefix: "$"
   token: "ODI1MTE1MDQ1ODg0NzIzMjAw.YF5ORA.sNULh7u62OHbHflj1TfEwm_1SPA"
