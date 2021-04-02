@@ -1,6 +1,13 @@
 server:
   port: 8088
 
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/treta-bot
+      readPreference: 'secondaryPreferred'
+      writeConcern: 'W1'
+
 logging:
   level:
     root: WARN
