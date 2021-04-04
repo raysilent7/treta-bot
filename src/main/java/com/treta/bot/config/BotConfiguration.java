@@ -17,13 +17,15 @@ public class BotConfiguration {
     private String token;
 
     @Bean
-    public <T extends Event> GatewayDiscordClient gatewayDiscordClient(List<EventListener<T>> eventListeners) {
+    public <T extends Event> GatewayDiscordClient gatewayDiscordClient (List<EventListener<T>> eventListeners) {
+
         GatewayDiscordClient client = DiscordClientBuilder.create(token)
                 .build()
                 .login()
                 .block();
 
-        for(EventListener<T> listener : eventListeners) {
+        for (EventListener<T> listener : eventListeners) {
+
             client.on(listener.getEventType())
                     .flatMap(listener::execute)
                     .onErrorResume(listener::handleError)

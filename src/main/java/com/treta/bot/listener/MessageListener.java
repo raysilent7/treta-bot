@@ -1,14 +1,11 @@
 package com.treta.bot.listener;
 
-import com.treta.bot.DTO.CommandDTO;
+import com.treta.bot.domain.CommandMap;
+import com.treta.bot.domain.CommandType;
 import com.treta.bot.repository.CommandMapRepository;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
-import java.util.Map;
 
 @RequiredArgsConstructor
 public abstract class MessageListener {
@@ -18,36 +15,30 @@ public abstract class MessageListener {
     public Mono<Void> processTextCommand (Message eventMessage) {
 
         return Mono.just(eventMessage)
-                .flatMap(this::resolveCommand)
-                .flatMap(Message::getChannel)
-                .flatMap(channel -> retrieveCommand(channel, eventMessage))
-                .flatMap(commandDTO -> commandDTO.getChannel().createMessage(commandDTO.getCommandReply()))
+                .flatMap(message-> resolveCommand(message, CommandType.TEXT))
+                .flatMap(this::replyCommand)
                 .then();
     }
 
-    protected Mono<Message> resolveCommand (Message message) {
+    private Mono<CommandMap> resolveCommand (Message message, CommandType type) {
 
-        return commandMapRepository.findAll()
-                .collectList()
-                .flatMap(list -> resolveName(list, message))
-                .filter(msg -> msg.getAuthor().map(user -> !user.isBot()).orElse(false));
+        return commandMapRepository.findCommandMapByCommandType(type)
+                .filter(commandMap -> commandMap.getCommands().containsKey(message.getContent().substring(1)))
+                .flatMap(commandMap -> resolveAuthor(message, commandMap));
     }
 
-    protected Mono<CommandDTO> retrieveCommand (MessageChannel channel, Message message) {
+    private Mono<Message> replyCommand (CommandMap commandMap) {
 
-        return commandMapRepository.findAll()
-                .collectList()
-                .map(list -> list.get(0).get(message.getContent().substring(1)))
-                .map(command -> CommandDTO.builder()
-                        .commandReply(command)
-                        .channel(channel)
-                        .build());
+        return Mono.just(commandMap)
+                .flatMap(map -> map.getMessage().getChannel())
+                .flatMap(channel -> channel.createMessage(commandMap.getCommands().get(commandMap.getMessage().getContent().substring(1))));
     }
 
-    private Mono<Message> resolveName (List<Map<String, String>> commands, Message message) {
+    private Mono<CommandMap> resolveAuthor (Message message, CommandMap commandMap) {
 
-        if (commands.get(0).containsKey(message.getContent().substring(1))) {
-            return Mono.just(message);
+        if (message.getAuthor().map(user -> !user.isBot()).orElse(false)) {
+            commandMap.setMessage(message);
+            return Mono.just(commandMap);
         }
         else {
             return Mono.empty();

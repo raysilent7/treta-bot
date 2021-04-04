@@ -1,8 +1,11 @@
 package com.treta.bot.repository;
 
+import com.treta.bot.domain.CommandMap;
+import com.treta.bot.domain.CommandType;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import reactor.core.publisher.Mono;
 
-import java.util.Map;
+public interface CommandMapRepository extends ReactiveMongoRepository<CommandMap, String> {
 
-public interface CommandMapRepository extends ReactiveMongoRepository<Map<String, String>, String> {
+    Mono<CommandMap> findCommandMapByCommandType (CommandType type);
 }

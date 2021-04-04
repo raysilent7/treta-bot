@@ -10,18 +10,19 @@ import reactor.core.publisher.Mono;
 @Service
 public class MessageCreateListener extends MessageListener implements EventListener<MessageCreateEvent> {
 
-    public MessageCreateListener(CommandMapRepository commandMapRepository) {
+    public MessageCreateListener (CommandMapRepository commandMapRepository) {
+
         super(commandMapRepository);
     }
 
     @Override
-    public Class<MessageCreateEvent> getEventType() {
+    public Class<MessageCreateEvent> getEventType () {
 
         return MessageCreateEvent.class;
     }
 
     @Override
-    public Mono<Void> execute(MessageCreateEvent event) {
+    public Mono<Void> execute (MessageCreateEvent event) {
 
         return processTextCommand(event.getMessage());
     }
