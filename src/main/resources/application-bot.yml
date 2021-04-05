@@ -8,10 +8,5 @@ spring:
       readPreference: 'secondaryPreferred'
       writeConcern: 'W1'
 
-logging:
-  level:
-    root: WARN
-    com: INFO
-
 bot:
   token: "ODI1MTE1MDQ1ODg0NzIzMjAw.YF5ORA.sNULh7u62OHbHflj1TfEwm_1SPA"
