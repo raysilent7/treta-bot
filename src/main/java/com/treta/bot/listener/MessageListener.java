@@ -10,72 +10,69 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 @RequiredArgsConstructor
 public abstract class MessageListener {
 
     protected final CommandMapRepository commandMapRepository;
 
-    public Mono<Void> processTextCommand (Message eventMessage) {
+    public Mono<Void> processTextCommand (Message eventMessage, String commandName) {
 
-        return Mono.just(eventMessage)
-                .flatMap(message -> resolveCommand(message, CommandType.TEXT))
+        return resolveCommand(eventMessage, commandName)
                 .flatMap(this::replyCommand)
                 .then();
     }
 
     public Mono<Void> addNewTextCommand (Message eventMessage) {
 
-        return commandMapRepository.findCommandMapByCommandType(CommandType.TEXT)
-                .switchIfEmpty(buildCommandMap(eventMessage))
+        return buildCommandMap(CommandType.TEXT, eventMessage)
+                .flatMap(commandMap -> commandMapRepository.findByCommandName(commandMap.getCommandName()))
+                .switchIfEmpty(buildCommandMap(CommandType.TEXT, eventMessage))
                 .flatMap(commandMap -> resolveArgs(commandMap, eventMessage))
                 .flatMap(this::saveNewCommand)
                 .flatMap(this::replyCommand)
                 .then();
     }
 
-    private Mono<CommandMap> buildCommandMap (Message message) {
+    private Mono<CommandMap> buildCommandMap (CommandType type, Message message) {
 
         return Mono.just(CommandMap.builder()
+                .commandName(Arrays.asList(message.getContent().split(" ")).get(1))
                 .LastModifiedDate(LocalDateTime.now())
-                .commandType(CommandType.TEXT)
-                .commands(new HashMap<>())
+                .commandType(type)
                 .build());
     }
 
     private Mono<CommandDTO> saveNewCommand (CommandDTO commandDTO) {
 
         commandDTO.setCommandType(CommandType.ADD);
-        commandDTO.getCommandMap().getCommands().put(commandDTO.getArgs().get(1), commandDTO.getArgs().get(2));
         return commandMapRepository.save(commandDTO.getCommandMap())
                 .then(Mono.just(commandDTO));
     }
 
     private Mono<CommandDTO> resolveArgs (CommandMap commandMap, Message message) {
 
-        CommandDTO commandDTO = CommandDTO.builder()
+        List<String> args = new LinkedList<>(Arrays.asList(message.getContent().split(" ")));
+        commandMap.setCommandName(args.get(1));
+        commandMap.resolveReply(args);
+
+        return Mono.just(CommandDTO.builder()
                 .commandMap(commandMap)
                 .message(message)
-                .args(new ArrayList<>())
-                .build();
-
-        commandDTO.setArgs(Arrays.asList(message.getContent().split(" ")));
-        return Mono.just(commandDTO);
+                .build());
     }
 
-    private Mono<CommandDTO> resolveCommand (Message message, CommandType type) {
+    private Mono<CommandDTO> resolveCommand (Message message, String commandName) {
 
-        return commandMapRepository.findCommandMapByCommandType(type)
-                .flatMap(commandMap -> resolveArgs(commandMap, message))
-                .filter(dto -> dto.getCommandMap().getCommands().containsKey(dto.getArgs().get(0).substring(1)))
-                .flatMap(dto -> {
-                    dto.setCommandType(CommandType.TEXT);
-                    return Mono.just(dto);
-                })
-                .flatMap(this::resolveAuthor);
+        return commandMapRepository.findByCommandName(commandName)
+                .flatMap(commandMap -> Mono.just(CommandDTO.builder()
+                        .commandType(CommandType.TEXT)
+                        .commandMap(commandMap)
+                        .message(message)
+                        .build()));
     }
 
     private Mono<Message> replyCommand (CommandDTO commandDTO) {
@@ -88,20 +85,10 @@ public abstract class MessageListener {
     private Mono<Message> reply (MessageChannel channel, CommandDTO commandDTO) {
 
         if (CommandType.ADD.equals(commandDTO.getCommandType())) {
-            return channel.createMessage(commandDTO.getCommandMap().getCommands().get(commandDTO.getArgs().get(1)));
+            return channel.createMessage(commandDTO.returnSuccessReply());
         }
         else {
-            return channel.createMessage(commandDTO.getCommandMap().getCommands().get(commandDTO.getArgs().get(0).substring(1)));
-        }
-    }
-
-    private Mono<CommandDTO> resolveAuthor (CommandDTO commandDTO) {
-
-        if (commandDTO.getMessage().getAuthor().map(user -> !user.isBot()).orElse(false)) {
-            return Mono.just(commandDTO);
-        }
-        else {
-            return Mono.empty();
+            return channel.createMessage(commandDTO.getCommandMap().getCommandReply());
         }
     }
 }

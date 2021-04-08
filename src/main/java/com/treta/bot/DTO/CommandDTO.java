@@ -6,8 +6,6 @@ import discord4j.core.object.entity.Message;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 @Builder
 public class CommandDTO {
@@ -15,5 +13,8 @@ public class CommandDTO {
     private Message message;
     private CommandMap commandMap;
     private CommandType commandType;
-    private List<String> args;
+
+    public String returnSuccessReply () {
+        return "Comando adicionado com sucesso: " + this.commandMap.getCommandName();
+    }
 }

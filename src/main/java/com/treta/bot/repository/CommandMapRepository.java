@@ -7,5 +7,5 @@ import reactor.core.publisher.Mono;
 
 public interface CommandMapRepository extends ReactiveMongoRepository<CommandMap, String> {
 
-    Mono<CommandMap> findCommandMapByCommandType (CommandType type);
+    Mono<CommandMap> findByCommandName (String name);
 }

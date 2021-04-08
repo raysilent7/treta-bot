@@ -10,3 +10,4 @@ spring:
 
 bot:
   token: "ODI1MTE1MDQ1ODg0NzIzMjAw.YF5ORA.sNULh7u62OHbHflj1TfEwm_1SPA"
+  prefix: "$"
