@@ -27,10 +27,12 @@ public class CommandMap {
     private LocalDateTime LastModifiedDate;
     private CommandType commandType;
     private String commandName;
+    private String commandDescription;
     private String commandReply;
 
     public void resolveReply (List<String> args) {
 
+        args.remove(0);
         args.remove(0);
         args.remove(0);
         this.commandReply = String.join(" ", args);

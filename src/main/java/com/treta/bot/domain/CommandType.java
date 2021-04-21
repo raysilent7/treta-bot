@@ -4,6 +4,6 @@ public enum CommandType {
 
     VOICE,
     TEXT,
-    ADD
+    ADMIN
 
 }
