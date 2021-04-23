@@ -1,14 +1,12 @@
-package com.treta.bot.service;
+package com.treta.bot.listener;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.treta.bot.config.LavaPlayerAudioProvider;
-import com.treta.bot.domain.AdminCommands;
-import com.treta.bot.domain.CommandMap;
-import com.treta.bot.domain.CommandType;
-import com.treta.bot.listener.EventListener;
-import com.treta.bot.listener.MessageListener;
 import com.treta.bot.repository.CommandMapRepository;
+import com.treta.bot.service.AddCommandsService;
+import com.treta.bot.service.HelpCommandsService;
+import com.treta.bot.service.TextCommandsService;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.voice.AudioProvider;
 import org.springframework.stereotype.Service;
@@ -21,9 +19,11 @@ public class MessageCreateListener extends MessageListener implements EventListe
 
     private final AudioPlayerManager playerManager;
 
-    public MessageCreateListener (CommandMapRepository commandMapRepository, AudioPlayerManager playerManager) {
+    public MessageCreateListener (CommandMapRepository commandMapRepository, TextCommandsService textCommandsService,
+                                  AddCommandsService addCommandsService, HelpCommandsService helpCommandsService,
+                                  AudioPlayerManager playerManager) {
 
-        super(commandMapRepository);
+        super(textCommandsService, helpCommandsService, addCommandsService, commandMapRepository);
         this.playerManager = playerManager;
     }
 
@@ -45,7 +45,7 @@ public class MessageCreateListener extends MessageListener implements EventListe
                 .map(msg -> Arrays.asList(msg.getContent().split(" ")).get(0).substring(1))
                 .flatMap(cmd -> processAdminCommands(event.getMessage()).then(Mono.just(cmd)))
                 .flatMap(commandMapRepository::findByCommandName)
-                .flatMap(commandMap -> processCommonCommands (event, commandMap))
+                .flatMap(commandMap -> processCommonCommands (event.getMessage(), commandMap))
                 .then();
     }
 }
