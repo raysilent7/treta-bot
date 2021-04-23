@@ -8,6 +8,8 @@ import com.treta.bot.repository.CommandMapRepository;
 import com.treta.bot.service.AddCommandsService;
 import com.treta.bot.service.HelpCommandsService;
 import com.treta.bot.service.TextCommandsService;
+import com.treta.bot.service.VoiceCommandsService;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -26,21 +28,25 @@ public abstract class MessageListener {
     private final TextCommandsService textCommandsService;
     private final HelpCommandsService helpCommandsService;
     private final AddCommandsService addCommandsService;
+    private final VoiceCommandsService voiceCommandsService;
     protected final CommandMapRepository commandMapRepository;
 
-    public Mono<CommandMap> processCommonCommands (Message message, CommandMap commandMap) {
+    public Mono<CommandMap> processCommonCommands (MessageCreateEvent event, CommandMap commandMap) {
+
         if (CommandType.VOICE.equals(commandMap.getCommandType())) {
-            return helpCommandsService.helpCommand(message)
+            return voiceCommandsService.processVoiceCommand(event, commandMap)
                     .flatMap(this::replyCommand);
         }
         else {
-            return textCommandsService.processTextCommand(message, commandMap)
+            return textCommandsService.processTextCommand(event.getMessage(), commandMap)
                     .flatMap(this::replyCommand);
         }
     }
 
     public Mono<CommandMap> processAdminCommands (Message message) {
+
         String commandName = Arrays.asList(message.getContent().split(" ")).get(0).substring(1);
+
         if (message.getAuthor().map(User::isBot).orElse(false)) {
             return Mono.empty();
         }
