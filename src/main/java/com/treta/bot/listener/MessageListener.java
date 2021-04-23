@@ -6,7 +6,9 @@ import com.treta.bot.domain.CommandMap;
 import com.treta.bot.domain.CommandType;
 import com.treta.bot.repository.CommandMapRepository;
 import com.treta.bot.util.StringUtils;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,32 +25,52 @@ public abstract class MessageListener {
     @Value("${bot.prefix}")
     protected String prefix;
 
-    protected final CommandMapRepository commandMapRepository;
+    public final CommandMapRepository commandMapRepository;
 
-    public Mono<Void> processTextCommand (Message message, String commandName) {
-
-        return resolveCommand(message, commandName)
-                .flatMap(this::replyCommand)
-                .then();
+    public Mono<CommandMap> processCommonCommands (MessageCreateEvent event, CommandMap commandMap) {
+        if (CommandType.VOICE.equals(commandMap.getCommandType())) {
+            return helpCommand(event.getMessage());
+        }
+        else {
+            return processTextCommand(event.getMessage(), commandMap);
+        }
     }
 
-    public Mono<Void> addNewTextCommand (Message message) {
+    public Mono<CommandMap> processAdminCommands (Message message) {
+        String commandName = Arrays.asList(message.getContent().split(" ")).get(0).substring(1);
+        if (message.getAuthor().map(User::isBot).orElse(false)) {
+            return Mono.empty();
+        }
+        else if (AdminCommands.ADD.getName().equals(commandName)) {
+            return addNewTextCommand(message);
+        }
+        else if (AdminCommands.HELP.getName().equals(commandName)) {
+            return helpCommand(message);
+        }
+        return Mono.empty();
+    }
+
+    public Mono<CommandMap> processTextCommand (Message message, CommandMap commandMap) {
+
+        return resolveCommand(message, commandMap)
+                .flatMap(this::replyCommand);
+    }
+
+    public Mono<CommandMap> addNewTextCommand (Message message) {
 
         return buildCommandMap(CommandType.TEXT, message)
                 .flatMap(commandMap -> commandMapRepository.findByCommandName(commandMap.getCommandName()))
                 .switchIfEmpty(buildCommandMap(CommandType.TEXT, message))
                 .flatMap(commandMap -> resolveArgs(commandMap, message))
                 .flatMap(this::saveNewCommand)
-                .flatMap(this::replyCommand)
-                .then();
+                .flatMap(this::replyCommand);
     }
 
-    public Mono<Void> helpCommand (Message message) {
+    public Mono<CommandMap> helpCommand (Message message) {
 
         return commandMapRepository.findAll().collectList()
                 .flatMap(commands -> createHelpMessage(commands, message))
-                .flatMap(this::replyCommand)
-                .then();
+                .flatMap(this::replyCommand);
     }
 
     private Mono<CommandDTO> createHelpMessage (List<CommandMap> commands, Message message) {
@@ -56,7 +78,7 @@ public abstract class MessageListener {
         String helpMessage = "__**Comandos**__\n\n" + AdminCommands.returnFullDescription();
 
         for (CommandMap map : commands) {
-            helpMessage = helpMessage.concat(prefix + map.getCommandName() + StringUtils.nullIsBlank(map.getCommandDescription()));
+            helpMessage = helpMessage.concat(prefix + map.getCommandName() + StringUtils.nullIsBlank(map.getCommandDescription()) + "\n");
         }
 
         CommandMap commandMap = CommandMap.builder()
@@ -104,22 +126,22 @@ public abstract class MessageListener {
                 .build());
     }
 
-    private Mono<CommandDTO> resolveCommand (Message message, String commandName) {
+    private Mono<CommandDTO> resolveCommand (Message message, CommandMap commandMap) {
 
-        return commandMapRepository.findByCommandName(commandName)
-                .flatMap(commandMap -> Mono.just(CommandDTO.builder()
+        return Mono.just(CommandDTO.builder()
                         .commandType(CommandType.TEXT)
                         .adminCommand(AdminCommands.NORMAL)
                         .commandMap(commandMap)
                         .message(message)
-                        .build()));
+                        .build());
     }
 
-    private Mono<Message> replyCommand (CommandDTO commandDTO) {
+    private Mono<CommandMap> replyCommand (CommandDTO commandDTO) {
 
         return Mono.just(commandDTO)
                 .flatMap(dto -> dto.getMessage().getChannel())
-                .flatMap(channel -> reply(channel, commandDTO));
+                .flatMap(channel -> reply(channel, commandDTO))
+                .then(Mono.just(commandDTO.getCommandMap()));
     }
 
     private Mono<Message> reply (MessageChannel channel, CommandDTO commandDTO) {
