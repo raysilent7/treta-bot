@@ -5,10 +5,7 @@ import com.treta.bot.domain.AdminCommands;
 import com.treta.bot.domain.CommandMap;
 import com.treta.bot.domain.CommandType;
 import com.treta.bot.repository.CommandMapRepository;
-import com.treta.bot.service.AddCommandsService;
-import com.treta.bot.service.HelpCommandsService;
-import com.treta.bot.service.TextCommandsService;
-import com.treta.bot.service.VoiceCommandsService;
+import com.treta.bot.service.*;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
@@ -29,6 +26,7 @@ public abstract class MessageListener {
     private final HelpCommandsService helpCommandsService;
     private final AddCommandsService addCommandsService;
     private final VoiceCommandsService voiceCommandsService;
+    private final RemoveCommandsService removeCommandsService;
     protected final CommandMapRepository commandMapRepository;
 
     public Mono<CommandMap> processCommonCommands (MessageCreateEvent event, CommandMap commandMap) {
@@ -50,16 +48,20 @@ public abstract class MessageListener {
         if (message.getAuthor().map(User::isBot).orElse(false)) {
             return Mono.empty();
         }
-        else if (AdminCommands.ADD.getName().equals(commandName)) {
+        else if (AdminCommands.ADD_TEXT.getName().equals(commandName)) {
             return addCommandsService.addNewTextCommand(message)
                     .flatMap(this::replyCommand);
         }
         else if (AdminCommands.HELP.getName().equals(commandName)) {
-            return helpCommandsService.helpCommand(message)
+            return helpCommandsService.processHelpCommand(message)
                     .flatMap(this::replyCommand);
         }
         else if (AdminCommands.ADD_VOICE.getName().equals(commandName)) {
             return addCommandsService.addNewVoiceCommand(message)
+                    .flatMap(this::replyCommand);
+        }
+        else if (AdminCommands.REMOVE.getName().equals(commandName)) {
+            return removeCommandsService.processRemoveCommand(message)
                     .flatMap(this::replyCommand);
         }
         return Mono.empty();
@@ -70,12 +72,12 @@ public abstract class MessageListener {
         return Mono.just(commandDTO)
                 .flatMap(dto -> dto.getMessage().getChannel())
                 .flatMap(channel -> reply(channel, commandDTO))
-                .then(Mono.just(commandDTO.getCommandMap()));
+                .thenReturn(commandDTO.getCommandMap());
     }
 
     private Mono<Message> reply (MessageChannel channel, CommandDTO commandDTO) {
 
-        if (AdminCommands.ADD.equals(commandDTO.getAdminCommand())) {
+        if (AdminCommands.ADD_TEXT.equals(commandDTO.getAdminCommand())) {
             return channel.createMessage(commandDTO.returnSuccessReply());
         }
         else {

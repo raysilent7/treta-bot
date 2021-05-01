@@ -24,7 +24,7 @@ public class HelpCommandsService {
 
     private final CommandMapRepository commandMapRepository;
 
-    public Mono<CommandDTO> helpCommand (Message message) {
+    public Mono<CommandDTO> processHelpCommand (Message message) {
 
         return commandMapRepository.findAll().collectList()
                 .flatMap(commands -> createHelpMessage(commands, message));

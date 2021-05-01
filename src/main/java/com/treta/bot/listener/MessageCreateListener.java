@@ -1,10 +1,7 @@
 package com.treta.bot.listener;
 
 import com.treta.bot.repository.CommandMapRepository;
-import com.treta.bot.service.AddCommandsService;
-import com.treta.bot.service.HelpCommandsService;
-import com.treta.bot.service.TextCommandsService;
-import com.treta.bot.service.VoiceCommandsService;
+import com.treta.bot.service.*;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -16,9 +13,9 @@ public class MessageCreateListener extends MessageListener implements EventListe
 
     public MessageCreateListener (CommandMapRepository commandMapRepository, TextCommandsService textCommandsService,
                                   AddCommandsService addCommandsService, HelpCommandsService helpCommandsService,
-                                  VoiceCommandsService voiceCommandsService) {
+                                  RemoveCommandsService removeCommandsService, VoiceCommandsService voiceCommandsService) {
 
-        super(textCommandsService, helpCommandsService, addCommandsService, voiceCommandsService, commandMapRepository);
+        super(textCommandsService, helpCommandsService, addCommandsService, voiceCommandsService, removeCommandsService, commandMapRepository);
     }
 
     @Override

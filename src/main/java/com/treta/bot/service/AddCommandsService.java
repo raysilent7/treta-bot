@@ -74,7 +74,7 @@ public class AddCommandsService {
     private Mono<CommandDTO> saveNewCommand (CommandDTO commandDTO) {
 
         commandDTO.setCommandType(CommandType.ADMIN);
-        commandDTO.setAdminCommand(AdminCommands.ADD);
+        commandDTO.setAdminCommand(AdminCommands.ADD_TEXT);
         return commandMapRepository.save(commandDTO.getCommandMap())
                 .thenReturn(commandDTO);
     }
