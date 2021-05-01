@@ -58,6 +58,10 @@ public abstract class MessageListener {
             return helpCommandsService.helpCommand(message)
                     .flatMap(this::replyCommand);
         }
+        else if (AdminCommands.ADD_VOICE.getName().equals(commandName)) {
+            return addCommandsService.addNewVoiceCommand(message)
+                    .flatMap(this::replyCommand);
+        }
         return Mono.empty();
     }
 

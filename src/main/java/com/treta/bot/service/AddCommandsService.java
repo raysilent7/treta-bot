@@ -1,6 +1,9 @@
 package com.treta.bot.service;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.treta.bot.DTO.CommandDTO;
+import com.treta.bot.config.TrackScheduler;
 import com.treta.bot.domain.AdminCommands;
 import com.treta.bot.domain.CommandMap;
 import com.treta.bot.domain.CommandType;
@@ -19,7 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AddCommandsService {
 
-    public final CommandMapRepository commandMapRepository;
+    private final CommandMapRepository commandMapRepository;
+    private final AudioPlayerManager playerManager;
 
     public Mono<CommandDTO> addNewTextCommand (Message message) {
 
@@ -28,6 +32,34 @@ public class AddCommandsService {
                 .switchIfEmpty(buildCommandMap(CommandType.TEXT, message))
                 .flatMap(commandMap -> resolveArgs(commandMap, message))
                 .flatMap(this::saveNewCommand);
+    }
+
+    public Mono<CommandDTO> addNewVoiceCommand (Message message) {
+
+        return buildCommandMap(CommandType.VOICE, message)
+                .flatMap(commandMap -> commandMapRepository.findByCommandName(commandMap.getCommandName()))
+                .switchIfEmpty(buildCommandMap(CommandType.VOICE, message))
+                .flatMap(commandMap -> resolveArgs(commandMap, message))
+                .flatMap(this::resolveTrackDurationAndSave);
+    }
+
+    private Mono<CommandDTO> resolveTrackDurationAndSave (CommandDTO commandDTO) {
+
+        return Mono.just(commandDTO.getCommandMap())
+                .map(map -> playerManager.loadItem(map.getCommandReply(), new TrackScheduler() {
+
+                    @Override
+                    public void trackLoaded (AudioTrack track) {
+                        Mono.just(commandDTO)
+                                .flatMap(dto -> {
+                                    commandDTO.getCommandMap().setDuration(track.getDuration() + 1500);
+                                    return Mono.just(dto);
+                                })
+                                .flatMap(dto -> commandMapRepository.save(dto.getCommandMap())
+                                        .thenReturn(commandDTO)).block();
+                    }
+                }))
+                .thenReturn(commandDTO);
     }
 
     private Mono<CommandMap> buildCommandMap (CommandType type, Message message) {
@@ -44,14 +76,13 @@ public class AddCommandsService {
         commandDTO.setCommandType(CommandType.ADMIN);
         commandDTO.setAdminCommand(AdminCommands.ADD);
         return commandMapRepository.save(commandDTO.getCommandMap())
-                .then(Mono.just(commandDTO));
+                .thenReturn(commandDTO);
     }
 
     private Mono<CommandDTO> resolveArgs (CommandMap commandMap, Message message) {
 
         List<String> args = new LinkedList<>(Arrays.asList(message.getContent().split(" ")));
         commandMap.setCommandName(args.get(1));
-        commandMap.setCommandDescription(args.get(2));
         commandMap.resolveReply(args);
 
         return Mono.just(CommandDTO.builder()

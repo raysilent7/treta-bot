@@ -35,7 +35,6 @@ public class CommandMap {
 
         args.remove(0);
         args.remove(0);
-        args.remove(0);
         this.commandReply = String.join(" ", args);
     }
 }

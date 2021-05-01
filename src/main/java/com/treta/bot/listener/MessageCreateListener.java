@@ -1,15 +1,11 @@
 package com.treta.bot.listener;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.treta.bot.config.LavaPlayerAudioProvider;
 import com.treta.bot.repository.CommandMapRepository;
 import com.treta.bot.service.AddCommandsService;
 import com.treta.bot.service.HelpCommandsService;
 import com.treta.bot.service.TextCommandsService;
 import com.treta.bot.service.VoiceCommandsService;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.voice.AudioProvider;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -20,7 +16,7 @@ public class MessageCreateListener extends MessageListener implements EventListe
 
     public MessageCreateListener (CommandMapRepository commandMapRepository, TextCommandsService textCommandsService,
                                   AddCommandsService addCommandsService, HelpCommandsService helpCommandsService,
-                                  VoiceCommandsService voiceCommandsService, AudioPlayerManager playerManager) {
+                                  VoiceCommandsService voiceCommandsService) {
 
         super(textCommandsService, helpCommandsService, addCommandsService, voiceCommandsService, commandMapRepository);
     }
