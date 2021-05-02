@@ -1,14 +1,17 @@
 package com.treta.bot.listener;
 
+import com.treta.bot.domain.CommandMap;
 import com.treta.bot.repository.CommandMapRepository;
 import com.treta.bot.service.*;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 
 @Service
+@Slf4j
 public class MessageCreateListener extends MessageListener implements EventListener<MessageCreateEvent> {
 
     public MessageCreateListener (CommandMapRepository commandMapRepository, TextCommandsService textCommandsService,
@@ -34,6 +37,10 @@ public class MessageCreateListener extends MessageListener implements EventListe
                 .flatMap(cmd -> processAdminCommands(event.getMessage()).then(Mono.just(cmd)))
                 .flatMap(commandMapRepository::findByCommandName)
                 .flatMap(commandMap -> processCommonCommands (event, commandMap))
+                .onErrorResume(e -> {
+                    log.error(e.getMessage(), e);
+                    return Mono.just(CommandMap.builder().build());
+                })
                 .then();
     }
 }
