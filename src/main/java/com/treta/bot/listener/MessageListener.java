@@ -56,6 +56,10 @@ public abstract class MessageListener {
             return helpCommandsService.processHelpCommand(message)
                     .flatMap(this::replyCommand);
         }
+        else if (AdminCommands.MEMES.getName().equals(commandName)) {
+            return helpCommandsService.processListMemesCommand(message)
+                    .flatMap(this::replyCommand);
+        }
         else if (AdminCommands.ADD_VOICE.getName().equals(commandName)) {
             return addCommandsService.addNewVoiceCommand(message)
                     .flatMap(this::replyCommand);
