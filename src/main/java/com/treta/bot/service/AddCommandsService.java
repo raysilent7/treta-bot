@@ -52,7 +52,7 @@ public class AddCommandsService {
                     public void trackLoaded (AudioTrack track) {
                         Mono.just(commandDTO)
                                 .flatMap(dto -> {
-                                    commandDTO.getCommandMap().setDuration(track.getDuration() + 1500);
+                                    commandDTO.getCommandMap().setDuration(track.getDuration() + 2000);
                                     return Mono.just(dto);
                                 })
                                 .flatMap(dto -> commandMapRepository.save(dto.getCommandMap())

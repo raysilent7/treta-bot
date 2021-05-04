@@ -12,10 +12,10 @@ public enum AdminCommands {
     NORMAL("anyCommand", "comandos que não são admin");
 
     @Getter
-    private String name;
+    private final String name;
 
     @Getter
-    private String description;
+    private final String description;
 
     AdminCommands (String name, String description) {
 
