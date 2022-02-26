@@ -1,0 +1,14 @@
+server:
+  port: 8088
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://raysilent:rgc25815870@cluster0.mj9mp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+      readPreference: ''
+      writeConcern: ''
+      auto-index-creation: true
+
+bot:
+  token: "ODI1MTE1MDQ1ODg0NzIzMjAw.YF5ORA.cgIceDF7LBMiX6ChegFQYUzLOgk"
+  prefix: "$"

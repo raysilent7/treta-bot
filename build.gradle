@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.treta'
 version = '0.0.6'
-sourceCompatibility = '11'
+sourceCompatibility = '1.8'
 
 configurations {
     compileOnly {
