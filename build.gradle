@@ -26,7 +26,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation "com.discord4j:discord4j-core:3.1.4"
+    implementation 'com.discord4j:discord4j-core:3.2.1'
     implementation 'com.sedmelluq:lavaplayer:1.3.75'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
