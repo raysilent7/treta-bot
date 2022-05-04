@@ -5,7 +5,11 @@ import com.treta.bot.domain.AdminCommands;
 import com.treta.bot.domain.CommandMap;
 import com.treta.bot.domain.CommandType;
 import com.treta.bot.repository.CommandMapRepository;
-import com.treta.bot.service.*;
+import com.treta.bot.service.AddCommandsService;
+import com.treta.bot.service.HelpCommandsService;
+import com.treta.bot.service.RemoveCommandsService;
+import com.treta.bot.service.TextCommandsService;
+import com.treta.bot.service.VoiceCommandsService;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
@@ -33,7 +37,7 @@ public abstract class MessageListener {
 
         if (CommandType.VOICE.equals(commandMap.getCommandType())) {
             return voiceCommandsService.processVoiceCommand(event, commandMap)
-                    .flatMap(this::replyCommand);
+                    .thenReturn(commandMap);
         }
         else {
             return textCommandsService.processTextCommand(event.getMessage(), commandMap)
