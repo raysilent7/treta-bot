@@ -28,7 +28,6 @@ public class VoiceCommandsService {
     private final AudioPlayerManager playerManager;
 
     public Mono<CommandDTO> processVoiceCommand (MessageCreateEvent event, CommandMap commandMap) {
-
         final AudioPlayer player = playerManager.createPlayer();
         AudioProvider provider = new LavaPlayerAudioProvider(player);
 
@@ -38,7 +37,6 @@ public class VoiceCommandsService {
                 .flatMap(channel -> channel.join(spec -> spec.setProvider(provider)))
                 .then(Mono.just(commandMap))
                 .map(cmdMap -> playerManager.loadItem(cmdMap.getCommandReply(), new TrackScheduler() {
-
                     @Override
                     public void trackLoaded (AudioTrack track) {
                         player.playTrack(track);
@@ -48,7 +46,6 @@ public class VoiceCommandsService {
     }
 
     private Mono<CommandDTO> endVoiceConnection (MessageCreateEvent event, CommandMap commandMap) {
-
         return Mono.justOrEmpty(event.getMember())
                 .flatMap(Member::getVoiceState)
                 .flatMap(VoiceState::getChannel)
