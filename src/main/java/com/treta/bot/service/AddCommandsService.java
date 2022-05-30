@@ -26,7 +26,6 @@ public class AddCommandsService {
     private final AudioPlayerManager playerManager;
 
     public Mono<CommandDTO> addNewTextCommand (Message message) {
-
         return buildCommandMap(CommandType.TEXT, message)
                 .flatMap(commandMap -> commandMapRepository.findByCommandName(commandMap.getCommandName()))
                 .switchIfEmpty(buildCommandMap(CommandType.TEXT, message))
@@ -35,7 +34,6 @@ public class AddCommandsService {
     }
 
     public Mono<CommandDTO> addNewVoiceCommand (Message message) {
-
         return buildCommandMap(CommandType.VOICE, message)
                 .flatMap(commandMap -> commandMapRepository.findByCommandName(commandMap.getCommandName()))
                 .switchIfEmpty(buildCommandMap(CommandType.VOICE, message))
@@ -44,7 +42,6 @@ public class AddCommandsService {
     }
 
     private Mono<CommandDTO> resolveTrackDurationAndSave (CommandDTO commandDTO) {
-
         return Mono.just(commandDTO.getCommandMap())
                 .map(map -> playerManager.loadItem(map.getCommandReply(), new TrackScheduler() {
 
@@ -63,7 +60,6 @@ public class AddCommandsService {
     }
 
     private Mono<CommandMap> buildCommandMap (CommandType type, Message message) {
-
         return Mono.just(CommandMap.builder()
                 .commandName(Arrays.asList(message.getContent().split(" ")).get(1))
                 .LastModifiedDate(LocalDateTime.now())
@@ -72,7 +68,6 @@ public class AddCommandsService {
     }
 
     private Mono<CommandDTO> saveNewCommand (CommandDTO commandDTO) {
-
         commandDTO.setCommandType(CommandType.ADMIN);
         commandDTO.setAdminCommand(AdminCommands.ADD_TEXT);
         return commandMapRepository.save(commandDTO.getCommandMap())
@@ -80,7 +75,6 @@ public class AddCommandsService {
     }
 
     private Mono<CommandDTO> resolveArgs (CommandMap commandMap, Message message) {
-
         List<String> args = new LinkedList<>(Arrays.asList(message.getContent().split(" ")));
         commandMap.setCommandName(args.get(1));
         commandMap.resolveReply(args);

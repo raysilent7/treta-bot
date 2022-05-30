@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class CommandMap {
     private LocalDateTime LastModifiedDate;
     private CommandType commandType;
     private long duration;
+    @Indexed(unique = true, background = true)
     private String commandName;
     private String commandDescription;
     private String commandReply;

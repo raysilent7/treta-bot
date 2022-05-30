@@ -34,19 +34,20 @@ public abstract class MessageListener {
     protected final CommandMapRepository commandMapRepository;
 
     public Mono<CommandMap> processCommonCommands (MessageCreateEvent event, CommandMap commandMap) {
-
         if (CommandType.VOICE.equals(commandMap.getCommandType())) {
             return voiceCommandsService.processVoiceCommand(event, commandMap)
                     .thenReturn(commandMap);
         }
-        else {
+        else if (CommandType.TEXT.equals(commandMap.getCommandType())) {
             return textCommandsService.processTextCommand(event.getMessage(), commandMap)
                     .flatMap(this::replyCommand);
+        }
+        else {
+            return null;
         }
     }
 
     public Mono<CommandMap> processAdminCommands (Message message) {
-
         String commandName = Arrays.asList(message.getContent().split(" ")).get(0).substring(1);
 
         if (message.getAuthor().map(User::isBot).orElse(false)) {
@@ -76,7 +77,6 @@ public abstract class MessageListener {
     }
 
     private Mono<CommandMap> replyCommand (CommandDTO commandDTO) {
-
         return Mono.just(commandDTO)
                 .flatMap(dto -> dto.getMessage().getChannel())
                 .flatMap(channel -> reply(channel, commandDTO))
@@ -84,7 +84,6 @@ public abstract class MessageListener {
     }
 
     private Mono<Message> reply (MessageChannel channel, CommandDTO commandDTO) {
-
         if (AdminCommands.ADD_TEXT.equals(commandDTO.getAdminCommand())) {
             return channel.createMessage(commandDTO.returnSuccessReply());
         }

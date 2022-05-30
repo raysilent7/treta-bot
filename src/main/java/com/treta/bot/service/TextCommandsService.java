@@ -12,12 +12,10 @@ import reactor.core.publisher.Mono;
 public class TextCommandsService {
 
     public Mono<CommandDTO> processTextCommand (Message message, CommandMap commandMap) {
-
         return resolveCommand(message, commandMap);
     }
 
     private Mono<CommandDTO> resolveCommand (Message message, CommandMap commandMap) {
-
         return Mono.just(CommandDTO.builder()
                 .commandType(CommandType.TEXT)
                 .adminCommand(AdminCommands.NORMAL)
