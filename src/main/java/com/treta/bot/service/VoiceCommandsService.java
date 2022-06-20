@@ -28,7 +28,6 @@ public class VoiceCommandsService {
     private final AudioPlayerManager playerManager;
 
     public Mono<CommandDTO> processVoiceCommand (MessageCreateEvent event, CommandMap commandMap) {
-
         final AudioPlayer player = playerManager.createPlayer();
         AudioProvider provider = new LavaPlayerAudioProvider(player);
 
@@ -47,8 +46,28 @@ public class VoiceCommandsService {
                 .then(endVoiceConnection(event, commandMap));
     }
 
-    private Mono<CommandDTO> endVoiceConnection (MessageCreateEvent event, CommandMap commandMap) {
+    public Mono<CommandDTO> play (MessageCreateEvent event, String linkToReproduce) {
+        final AudioPlayer player = playerManager.createPlayer();
+        AudioProvider provider = new LavaPlayerAudioProvider(player);
 
+        return Mono.justOrEmpty(event.getMember())
+                .flatMap(Member::getVoiceState)
+                .flatMap(VoiceState::getChannel)
+                .flatMap(channel -> channel.join(spec -> spec.setProvider(provider)))
+                .thenReturn(linkToReproduce)
+                .map(link -> playerManager.loadItem(link, new TrackScheduler() {
+                    @Override
+                    public void trackLoaded (AudioTrack track) {
+                        player.playTrack(track);
+                    }
+                }))
+                .log()
+                .then(buildCommandMapToPlayMusic(linkToReproduce))
+                .flatMap(map -> endVoiceConnection(event, map));
+
+    }
+
+    private Mono<CommandDTO> endVoiceConnection (MessageCreateEvent event, CommandMap commandMap) {
         return Mono.justOrEmpty(event.getMember())
                 .flatMap(Member::getVoiceState)
                 .flatMap(VoiceState::getChannel)
@@ -61,5 +80,22 @@ public class VoiceCommandsService {
                         .commandMap(commandMap)
                         .message(event.getMessage())
                         .build()));
+    }
+
+    private Mono<CommandMap> buildCommandMapToPlayMusic (String linkToReproduce) {
+        CommandMap commandMap = new CommandMap();
+        return Mono.just(commandMap)
+                .map(map -> playerManager.loadItem(linkToReproduce, new TrackScheduler() {
+
+                    @Override
+                    public void trackLoaded (AudioTrack track) {
+                        Mono.just(map)
+                                .flatMap(map -> {
+                                    map.setDuration(track.getDuration() + 2000);
+                                    return Mono.just(map);
+                                }).block();
+                    }
+                }))
+                .thenReturn(commandMap);
     }
 }

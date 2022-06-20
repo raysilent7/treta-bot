@@ -2,7 +2,11 @@ package com.treta.bot.listener;
 
 import com.treta.bot.domain.CommandMap;
 import com.treta.bot.repository.CommandMapRepository;
-import com.treta.bot.service.*;
+import com.treta.bot.service.AddCommandsService;
+import com.treta.bot.service.HelpCommandsService;
+import com.treta.bot.service.RemoveCommandsService;
+import com.treta.bot.service.TextCommandsService;
+import com.treta.bot.service.VoiceCommandsService;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +38,7 @@ public class MessageCreateListener extends MessageListener implements EventListe
                 .filter(msg -> msg.getContent().startsWith(prefix))
                 .filter(msg -> msg.getAuthor().map(user -> !user.isBot()).orElse(false))
                 .map(msg -> Arrays.asList(msg.getContent().split(" ")).get(0).substring(1))
-                .flatMap(cmd -> processAdminCommands(event.getMessage()).then(Mono.just(cmd)))
+                .flatMap(cmd -> processAdminCommands(event).then(Mono.just(cmd)))
                 .flatMap(commandMapRepository::findByCommandName)
                 .flatMap(commandMap -> processCommonCommands (event, commandMap))
                 .onErrorResume(e -> {

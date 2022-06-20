@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
+import java.util.List;
 
 @RequiredArgsConstructor
 public abstract class MessageListener {
@@ -45,9 +46,11 @@ public abstract class MessageListener {
         }
     }
 
-    public Mono<CommandMap> processAdminCommands (Message message) {
+    public Mono<CommandMap> processAdminCommands (MessageCreateEvent event) {
 
-        String commandName = Arrays.asList(message.getContent().split(" ")).get(0).substring(1);
+        Message message = event.getMessage();
+        List<String> commandArgs = Arrays.asList(message.getContent().split(" "));
+        String commandName = commandArgs.get(0).substring(1);
 
         if (message.getAuthor().map(User::isBot).orElse(false)) {
             return Mono.empty();
@@ -71,6 +74,10 @@ public abstract class MessageListener {
         else if (AdminCommands.REMOVE.getName().equals(commandName)) {
             return removeCommandsService.processRemoveCommand(message)
                     .flatMap(this::replyCommand);
+        }
+        else if (AdminCommands.PLAY.getName().equals(commandName)) {
+            return voiceCommandsService.play(event, commandArgs.get(1))
+                    .map(CommandDTO::getCommandMap);
         }
         return Mono.empty();
     }
